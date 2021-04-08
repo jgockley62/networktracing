@@ -81,7 +81,7 @@ RUN R -e "install.packages('bcv')" \
 && R -e "devtools::install_github('blogsdon/spike/spike')" \
 && R -e "devtools::install_github('rlbarter/superheat')" \
 && R -e "devtools::install_github('jhrcook/HotNetvieweR')" \
-&& R -e "devtools::install_github('jgockley62/igraphNetworkExpansion')" \
+&& R -e "devtools::install_github('jgockley62/igraphNetworkExpansion')" 
 
 RUN sudo apt-add-repository -y ppa:marutter/rrutter
 RUN sudo R CMD javareconf
