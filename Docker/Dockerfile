@@ -34,14 +34,9 @@ RUN sudo apt-get install -y python \
 # Install R Dependencies
 RUN R -e "install.packages('bcv')" \
 && R -e "install.packages('BiocManager')" \
-&& R -e "BiocManager::install('biomaRt')"
-RUN R -e "BiocManager::install('annotate')"
-RUN R -e "BiocManager::install('paxtoolsr')"
-RUN R -e "devtools::install_github('brian-bot/githubr')" \
-&& R -e "devtools::install_github('blogsdon/spike/spike')" \
-&& R -e "devtools::install_github('rlbarter/superheat')" \
-&& R -e "devtools::install_github('jhrcook/HotNetvieweR')" \
-&& R -e "devtools::install_github('jgockley62/igraphNetworkExpansion')" \
+&& R -e "BiocManager::install('biomaRt')" \
+&& R -e "BiocManager::install('annotate')" \
+&& R -e "BiocManager::install('paxtoolsr')" \
 && R -e "BiocManager::install('clusterProfiler')" \
 && R -e "BiocManager::install('ComplexHeatmap')" \
 && R -e "install.packages('corpcor')" \
@@ -81,7 +76,12 @@ RUN R -e "devtools::install_github('brian-bot/githubr')" \
 && R -e "install.packages('tidyr')" \
 && R -e "BiocManager::install('utils')" \
 && R -e "install.packages('vbsr', repos='http://cran.us.r-project.org')" \
-&& R -e "BiocManager::install('WGCNA')"
+&& R -e "BiocManager::install('WGCNA')" \
+&& R -e "devtools::install_github('brian-bot/githubr')" \
+&& R -e "devtools::install_github('blogsdon/spike/spike')" \
+&& R -e "devtools::install_github('rlbarter/superheat')" \
+&& R -e "devtools::install_github('jhrcook/HotNetvieweR')" \
+&& R -e "devtools::install_github('jgockley62/igraphNetworkExpansion')" \
 
 RUN sudo apt-add-repository -y ppa:marutter/rrutter
 RUN sudo R CMD javareconf
