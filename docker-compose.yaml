@@ -9,7 +9,7 @@ services:
     networks:
       trial:
     volumes:
-      - /home/jgockley/igraph_Network_Expansion:/home/jgockley/igraph_Network_Expansion
+      - /home/jgockley/networktracing:/home/jgockley/networktracing
     ports:
       - "6080:6080"
     depends_on:
@@ -19,9 +19,9 @@ services:
       - APP_PASSWORD_HASH=$HASH
 
   rstudio:
-    image: jgockley/igraphnetworkexpansion:Network
+    image: network
     volumes:
-      - /home/jgockley/igraph_Network_Expansion:/home/jgockley/igraph_Network_Expansion
+      - /home/jgockley/networktracing:/home/jgockley/networktracing
     ports:
       - "8787:8787"
     environment:
@@ -35,13 +35,13 @@ services:
       outside-world:
     volumes:
       - ./caddy/Caddyfile:/etc/Caddyfile 
-      - /home/jgockley/igraph_Network_Expansion:/home/jgockley/igraph_Network_Expansion
+      - /home/jgockley/networktracing:/home/jgockley/networktracing
     ports:
       - "6080:6080"
     environment:
       - APP_USERNAME=$USER
       - APP_PASSWORD_HASH=$HASH
-      - name=igraph_network_expansion_app_1
+      - name=networktracing_app_1
       - net=trial
       - reverse_proxy_from=app:6080
 
