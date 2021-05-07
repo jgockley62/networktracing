@@ -1,7 +1,8 @@
 #_# This script loads and filters Greg Cary's process enrichments
 #_# Input are two syn IDs for the GeneSet process and Gene assignments for the processes
 
-setwd('~/igraph_Network_Expansion/')
+#setwd('~/igraph_Network_Expansion/')
+setwd('networktracing/')
 
 if ("fitdistrplus" %in% rownames(installed.packages()) == FALSE) {
   install.packages("fitdistrplus")
@@ -19,11 +20,16 @@ rm(user)
 rm(pass)
 
 #Annotation of Genes to Biological Domains 
-genes <- 'syn24827928' 
-processes <- 'syn24827958'
+#genes <- 'syn24827928' 
+genes <- 'syn25428992'
+#_#processes <- 'syn24827958'
+processes <- 'syn25677919'
 
 genes <- readRDS(file = syn_temp$get(genes)$path)
 processes <- readRDS(file = syn_temp$get(processes)$path)
+
+genes <- as.data.frame(genes)
+processes <- as.data.frame(processes)
 
 sig_terms <- processes[processes$padj < 0.05, ]$pathway
 
@@ -236,44 +242,49 @@ names(pull_all) <- biodomains
 pull_biodomain <- as.list(biodomains_All)
 names(pull_biodomain) <- biodomains_All
 
+#NEW: syn25575156
+#Old: syn24168007
 for (bd in biodomains) { 
   #Leading Edge Genes
   df <- read.csv(
     syn_temp$tableQuery(
       query = paste0(
-        'SELECT ENSG,GeneName,OmicsScore,Overall FROM syn24168007 WHERE ENSG IN (\'',
+        'SELECT ENSG,GeneName,OmicsScore,Logsdon FROM syn25575156 WHERE ENSG IN (\'',
         paste0( uniq_lead[[bd]], collapse='\', \'' ),
         '\')'),
       resultsAs = 'csv')$filepath
-    )[, c('ENSG', 'GeneName', 'OmicsScore', 'Overall')]
+    )[, c('ENSG', 'GeneName', 'OmicsScore', 'Logsdon')]
   df$logOmics <- log2(df$OmicsScore)
-  df$logOverall <- log2(df$Overall)
+  df$logOverall <- log2(df$Logsdon)
+  colnames(df)[colnames(df)=="Logsdon"] <- "Overall"
   pull_lead[[bd]] <- df
   
   #All Genes
   df <- read.csv(
     syn_temp$tableQuery(
       query = paste0(
-        'SELECT ENSG,GeneName,OmicsScore,Overall FROM syn24168007 WHERE ENSG IN (\'',
+        'SELECT ENSG,GeneName,OmicsScore,Logsdon FROM syn25575156 WHERE ENSG IN (\'',
         paste0( uniq_all[[bd]], collapse='\', \'' ),
         '\')'),
       resultsAs = 'csv')$filepath
-  )[, c('ENSG', 'GeneName', 'OmicsScore', 'Overall')]
+  )[, c('ENSG', 'GeneName', 'OmicsScore', 'Logsdon')]
   df$logOmics <- log2(df$OmicsScore)
-  df$logOverall <- log2(df$Overall)
+  df$logOverall <- log2(df$Logsdon)
+  colnames(df)[colnames(df)=="Logsdon"] <- "Overall"
   pull_all[[bd]] <- df
   
   #Complete Biodomains
   df <- read.csv(
     syn_temp$tableQuery(
       query = paste0(
-        'SELECT ENSG,GeneName,OmicsScore,Overall FROM syn24168007 WHERE ENSG IN (\'',
+        'SELECT ENSG,GeneName,OmicsScore,Logsdon FROM syn25575156 WHERE ENSG IN (\'',
         paste0( domain_lead[[bd]], collapse='\', \'' ),
         '\')'),
       resultsAs = 'csv')$filepath
-  )[, c('ENSG', 'GeneName', 'OmicsScore', 'Overall')]
+  )[, c('ENSG', 'GeneName', 'OmicsScore', 'Logsdon')]
   df$logOmics <- log2(df$OmicsScore)
-  df$logOverall <- log2(df$Overall)
+  df$logOverall <- log2(df$Logsdon)
+  colnames(df)[colnames(df)=="Logsdon"] <- "Overall"
   pull_biodomain[[bd]] <- df
   
 }
@@ -283,10 +294,10 @@ library(fitdistrplus)
 all_scores <- read.csv(
   syn_temp$tableQuery(
     query = paste0(
-      'SELECT ENSG,GeneName,OmicsScore,Overall FROM syn24168007'),
+      'SELECT ENSG,GeneName,OmicsScore,Logsdon FROM syn25575156'),
     resultsAs = 'csv')$filepath
-)[, c('ENSG', 'GeneName', 'OmicsScore', 'Overall')]
-
+)[, c('ENSG', 'GeneName', 'OmicsScore', 'Logsdon')]
+colnames(all_scores)[colnames(all_scores)=="Logsdon"] <- "Overall"
 
 #### Functionaize...
 
@@ -314,6 +325,7 @@ list_generator <- function(dat, val, Max = 50, Zstart=1, Zstep = 0.5) {
     return(data$GeneName)
   }
   # Test the 4 fit models
+  look_dist[ look_dist==0] <-look_dist[ look_dist==0]+0.0001
   fitg <- summary( fitdistrplus::fitdist( look_dist, "gamma" ) )
   fitln <- summary( fitdistrplus::fitdist( look_dist, "lnorm" ) )
   fitW <- summary( fitdistrplus::fitdist( look_dist, "weibull" ) )
@@ -632,7 +644,7 @@ all_annotations = list(
   consortium	= 'TREAT-AD'
 )
 
-syns_used <- c('syn24827928', 'syn24827958')
+syns_used <- c('syn25428992', 'syn25677919')
 
 ### Store files in synapse
 ## Push Leading Edge
