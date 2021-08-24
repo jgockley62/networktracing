@@ -4,7 +4,7 @@ FROM rocker/tidyverse:latest
 RUN sudo apt-get update -y \
 && sudo apt-get install -y libpython2-dev libpython3-dev  dpkg-dev zlib1g-dev \
 && sudo apt-get install -y libssl-dev libffi-dev libglpk-dev curl nano less gawk \
-&& sudo apt-get install -y openssh-client \
+&& sudo apt-get install -y openssh-client libzmq3-dev \
 && sudo apt-get install -y build-essential libcurl4-openssl-dev chrpath libssl-dev \
 && sudo apt-get install -y libxft-dev libfreetype6 libfreetype6-dev \
 && sudo apt-get install -y libfontconfig1 libfontconfig1-dev php php-common gcc git \
