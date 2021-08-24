@@ -53,6 +53,10 @@ sudo sed -i  "s/user/jgockley/" .env
 #Insert the RStudio Password 
 sudo sed -i  "s/pass/test/" .env
 
+#Add the values to the env
+HASH=$(docker run --rm -it cyto-caddy caddy hash-password -plaintext 'test')
+USER=ssm-user
+PASS=test
 ```
 
 ### Build Containers

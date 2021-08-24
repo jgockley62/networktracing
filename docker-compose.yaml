@@ -9,7 +9,7 @@ services:
     networks:
       trial:
     volumes:
-      - /home/jgockley/networktracing:/home/jgockley/networktracing
+      - /home/ssm-user:/home/ssm-user
     ports:
       - "6080:6080"
     depends_on:
@@ -21,7 +21,7 @@ services:
   rstudio:
     image: network
     volumes:
-      - /home/jgockley/networktracing:/home/jgockley/networktracing
+      - /home/ssm-user:/home/ssm-user
     ports:
       - "8787:8787"
     environment:
@@ -35,7 +35,7 @@ services:
       outside-world:
     volumes:
       - ./caddy/Caddyfile:/etc/Caddyfile 
-      - /home/jgockley/networktracing:/home/jgockley/networktracing
+      - /home/ssm-user:/home/ssm-user
     ports:
       - "6080:6080"
     environment:
