@@ -157,7 +157,7 @@ this_repo <- githubr::getRepo(
 )
 prov <- githubr::getPermlink(
   repository = this_repo,
-  repositoryPath = 'code/03_PathTracing.Rmd'
+  repositoryPath = 'code/04_Trial_Trace.R'
   )
 
 
@@ -187,19 +187,19 @@ trace_filt <- igraphNetworkExpansion::trace_filter(trace)
 
 igraphNetworkExpansion::store_net(
   network = net,
-  net_filename = 'KinaseRun.graphml',
+  net_filename = 'KinaseRun',
   net_synname = 'Kinase Run',
   p_id = 'syn25190666',
   folder = 'Jesses Kinase Runs',
-  act_name,
-  act_desc,
-  synap_import,
-  client_import,
+  act_name = 'Jesses Kinase Subnetwork',
+  act_desc = 'Traces Jesses Kinase and Sentinal List',
+  synap_import = syn_temp,
+  client_import = synapseclient,
   code = NULL,
   repo = NULL,
   syn_used = syns_used,
-  subset = NULL,
-  prov_object = NULL
+  subset = trace_filt,
+  prov_object = prov
 )
 
 
