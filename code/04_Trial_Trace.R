@@ -1,6 +1,7 @@
 ################################################################################
 # Quick Trial Trace for Jesses kinases
 setwd('~/networktracing/code/')
+syns_used <- NULL
 
 reticulate::use_python("/usr/bin/python3", required = TRUE)
 synapseclient <- reticulate::import("synapseclient")
@@ -16,6 +17,9 @@ Filter_Edges <- 'YES'
 #Simple edges ( One Edge per-interaction )
 Simple <- 'YES'
 
+syns_used <- c( syns_used, 'syn23283482', 'syn23283475',
+                'syn22863899', 'syn22863896', 'syn23283482', 'syn23283475',
+                'syn22992753', 'syn22992709')
 if( Use_Cor == 'YES' ){
   if( Directed == 'YES' ){
     load( syn_temp$get('syn23283482')$path )
@@ -88,7 +92,7 @@ if( Filter_Edges == 'YES' ){
   net <- test_net
 }
 
-
+syns_used <- c( syns_used, 'syn22758171')
 #Annotate vertices on Omics Weights:
 OMICS_dep <- read.csv(syn_temp$get('syn22758171')$path)
 OMICS <- read.csv( syn_temp$tableQuery( paste0( 'SELECT * FROM syn25575156 WHERE GeneName in (\'',
@@ -160,6 +164,7 @@ prov <- githubr::getPermlink(
   repositoryPath = 'code/04_Trial_Trace.R'
   )
 
+syns_used <- c( syns_used, 'syn26126932', 'syn26126931' )
 
 kinases <- igraphNetworkExpansion::list_load(
   'syn26126932',
@@ -202,4 +207,9 @@ igraphNetworkExpansion::store_net(
   prov_object = prov
 )
 
+net_trace <- igraphNetworkExpansion::network_load(
+  syn_id = 'syn26126978', 
+  form = 'graphml',
+  synap_import = syn_temp
+)
 
