@@ -188,7 +188,35 @@ trace <- lapply(
   cores = 12
 )
 
-trace_filt <- igraphNetworkExpansion::trace_filter(trace)
+targ <- NULL
+sent <- NULL
+for( i in 1:length(trace) ){
+  targ <- c(targ,trace[[i]]$Inter)
+  sent <- c(sent,trace[[i]]$Sentinal)
+}
+
+u_targ <- targ[!duplicated(targ)]
+u_sent <- sent[!duplicated(sent)]
+
+# Only genes fount in both target and sentinal traces
+opt_1 <- u_targ[u_targ%in%u_sent]
+
+# All genes present more than twice
+opt_2 <- c(
+  names(table(sent)[table(sent)>1]),
+  names(table(targ)[table(targ)>1])
+)
+opt_2<-opt_2[!duplicated(opt_2)]
+
+# All Genes 
+opt_3 <- c(
+  names(table(sent)),
+  names(table(targ))
+)
+opt_3<-opt_3[!duplicated(opt_3)]
+
+#trace_filt <- igraphNetworkExpansion::trace_filter(trace)
+trace_filt <- opt_3
 
 igraphNetworkExpansion::store_net(
   network = net,
