@@ -167,7 +167,7 @@ val.genes <- val.genes[!duplicated(val.genes)]
 write.csv( val.genes, file = 'Non_CHEBI_Connected_Pathway_Commons_Genes.csv' )
 
 
-parentId <- 'syn21534582'
+parentId <- 'syn26844059'
 activityName = 'Igraph_Full_Networks';
 activityDescription = 'Full Protein-Protein Nets';
 CODE <- syn_temp$store(synapseclient$Folder(name = "igraphData", parentId = parentId))
@@ -175,8 +175,8 @@ CODE <- syn_temp$store(synapseclient$Folder(name = "igraphData", parentId = pare
 thisFileName <- '01_Assemble_Network_Dataframe.Rmd'
 
 # Github link
-#TBD_ # thisRepo <- githubr::getRepo(repository = "jgockley62/igraph_Network_Expansion", ref="branch", refName='master')
-#TBD_ # thisFile <- githubr::getPermlink(repository = thisRepo, repositoryPath=paste0('code/',thisFileName))
+thisRepo <- githubr::getRepo(repository = "jgockley62/igraph_Network_Expansion", ref="branch", refName='master')
+thisFile <- githubr::getPermlink(repository = thisRepo, repositoryPath=paste0('code/',thisFileName))
 
 #Set Used SynIDs For Provenance
 Syns_Used <- SIFs
@@ -194,7 +194,7 @@ all.annotations = list(
 )
 
 # Store  executed = thisFile,
-ENRICH_OBJ <-  syn_temp$store( synapseclient$File( path='01_Assemble_Network_Dataframe.Rmd', name = 'Genes In Pathway Commons', parentId=CODE$properties$id ), used = Syns_Used, activityName = activityName, activityDescription = activityDescription)
+ENRICH_OBJ <-  syn_temp$store( synapseclient$File( path='01_Assemble_Network_Dataframe.Rmd', name = 'Genes In Pathway Commons', parentId=CODE$properties$id ), used = Syns_Used, executed = thisFile, activityName = activityName, activityDescription = activityDescription)
 
 ########################################
 
