@@ -157,6 +157,52 @@ Total <- Data$DF
 net_oldStyle <- Data$NET
 Graph <- Data$Gra
 
+########################################
+# write total Gene Space for Jesse
+# Genes in pathway commons - No CHEBI
+foo <- Total[ !( grepl('CHEBI',Total$from)| grepl('CHEBI',Total$from) ), ]
+val.genes <- c(foo$from,foo$to)
+val.genes <- val.genes[!duplicated(val.genes)]
+
+write.csv( val.genes, file = 'Non_CHEBI_Connected_Pathway_Commons_Genes.csv' )
+
+
+parentId <- 'syn21534582'
+activityName = 'Igraph_Full_Networks';
+activityDescription = 'Full Protein-Protein Nets';
+CODE <- syn_temp$store(synapseclient$Folder(name = "igraphData", parentId = parentId))
+
+thisFileName <- '01_Assemble_Network_Dataframe.Rmd'
+
+# Github link
+#TBD_ # thisRepo <- githubr::getRepo(repository = "jgockley62/igraph_Network_Expansion", ref="branch", refName='master')
+#TBD_ # thisFile <- githubr::getPermlink(repository = thisRepo, repositoryPath=paste0('code/',thisFileName))
+
+#Set Used SynIDs For Provenance
+Syns_Used <- SIFs
+
+# Set annotations
+all.annotations = list(
+  dataType = 'Network',
+  summaryLevel = 'gene',
+  assay	 = 'RNAseq',
+  tissueTypeAbrv	= c('IFG', 'STG', 'FP', 'PHG', 'TCX', 'DLFPC'), 
+  study = c( 'MSBB', 'ROSMAP', 'Mayo' ), 
+  organism = 'HomoSapiens',
+  consortium	= 'TreatAD',
+  genomeAssemblyID = 'GRCh38'
+)
+
+# Store  executed = thisFile,
+ENRICH_OBJ <-  syn_temp$store( synapseclient$File( path='01_Assemble_Network_Dataframe.Rmd', name = 'Genes In Pathway Commons', parentId=CODE$properties$id ), used = Syns_Used, activityName = activityName, activityDescription = activityDescription)
+
+########################################
+
+length(all.genes[!grepl('CHEBI',all.genes)])
+# 19572
+length(val.genes[!grepl('CHEBI',val.genes)])
+# 19092
+
 Tot <- 0
 for(type in levels(Total$interaction) ){
   message( paste0( type, ": ", eval(parse(text=paste0(  'length(E(Graph$`', type, '`))' ))) ))
