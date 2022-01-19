@@ -168,8 +168,8 @@ write.csv( val.genes, file = 'Non_CHEBI_Connected_Pathway_Commons_Genes.csv' )
 
 
 parentId <- 'syn26844059'
-activityName = 'Igraph_Full_Networks';
-activityDescription = 'Full Protein-Protein Nets';
+activityName = 'All Pathway Commons Genes excluding CHEBI Links';
+activityDescription = 'All Pathway Commons Genes excluding CHEBI Links';
 CODE <- syn_temp$store(synapseclient$Folder(name = "igraphData", parentId = parentId))
 
 thisFileName <- '01_Assemble_Network_Dataframe.Rmd'
