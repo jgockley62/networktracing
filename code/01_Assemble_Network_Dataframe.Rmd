@@ -29,7 +29,7 @@ source('igraphhack/igraphplot2.R')
 setwd('~/igraph_Network_Expansion/')
 
 reticulate::use_python("/usr/bin/python", required = TRUE)
-synapseclient <- reticulate::import("synapseclient")
+[synapseclient <- reticulate::import("synapseclient")
 syn_temp <- synapseclient$Synapse()
 syn_temp$login(  )
 

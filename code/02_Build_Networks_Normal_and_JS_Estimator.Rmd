@@ -10,6 +10,7 @@ library(igraph)
 library(paxtoolsr)
 library(RJSONIO)
 library(httr)
+library(dplyr)
 library(DOSE)
 library(org.Hs.eg.db)
 library(clusterProfiler)
@@ -38,22 +39,141 @@ load( syn_temp$get('syn22992205')$path )
 
 # Use Correlation to choose to keep the edge or not
 Use_Cor <- 'NO'
+
 ```
 
 
 ```{r MakeNet }
-Total <- Total[ is.na(Total$Avg_Cortex_CE)==F, ]
+#Total <- Total[ is.na(Total$Avg_Cortex_CE)==F, ]
+
+# Gene Name Translation:
+gn_trans <- read.csv(syn_temp$get('syn26947189')$path, row.names=1)
+
 #Try Cortex CE net:
 #Implement the edge_betweeness Algo:
 if( Use_Cor == 'YES' ){
   #Only take edges with Coexpression
   Total_Cor <- Total[ Total$Avg_Cortex_CE > 0,]
 }else{
-  #Else Only take edges with OMICs Weights
-  #Deprecated# Total_Cor <- Total[ is.na( Total$Avg_Cortex_CE ) == FALSE, ]
-  OMICS <- read.csv(syn_temp$get('syn22758171')$path)
-  Total_Cor <- Total[ Total$from %in% OMICS$GName & Total$to %in% OMICS$GName, ]
+  #Retain those with OMICs and scc Weights
+  OMICS <- read.csv(syn_temp$get('syn22758171',version='4')$path)
+  filt_trans <- gn_trans[ gn_trans$hgnc_symbol %in% OMICS$GName, ]
+  
+  # 15,362 PC genes in OMICs -  
+  table(is.na(filt_trans$Path_commons_name))
+  
+  sc_allen <- read.csv(syn_temp$get('syn26720729')$path, row.names = 1)
+  sc_names <- row.names(sc_allen)
+  #sc_0 <- sc_allen %>% filter_at(vars(1:120), any_vars(. > 0))
+  #sc_05 <- sc_allen %>% filter_at(vars(1:120), any_vars(. >= 0.5))
+  #sc_1 <- sc_allen %>% filter_at(vars(1:120), any_vars(. >= 1))
+  
+  ## - Set filter at 5 CPMs
+  sc_5 <- sc_allen %>% filter_at(vars(1:120), any_vars(. >= log2(5)))
+  filt_sc <- gn_trans[ gn_trans$allen_gene_name %in% row.names(sc_5), ]
+  
+  ## - Test - ##
+  full_filt <- gn_trans[ (gn_trans$ensembl_gene_id %in% filt_trans$ensembl_gene_id) |
+              (gn_trans$ensembl_gene_id %in% filt_sc$ensembl_gene_id) , ]
+  full_filt <- full_filt[ !(is.na(full_filt$Path_commons_name)), ]
+  dim(full_filt)
+  
+  t_keeps <- c(filt_sc$Path_commons_name, filt_trans$Path_commons_name)
+  t_keeps <- t_keeps[ !duplicated(t_keeps) ]
+  t_keeps <- t_keeps[ !is.na(t_keeps) ]
+  
+  #Apply Filter: 
+  Total_Cor <- Total[ Total$from %in% t_keeps & Total$to %in% t_keeps, ]
 }
+
+#############################################################################
+# Annotate single cell exp for all genes:
+
+Ast <- colnames(sc_allen)[ grepl( 'Astro_', colnames(sc_allen))]
+Micro <- colnames(sc_allen)[ grepl( 'Micro_', colnames(sc_allen))]
+Oligo <- colnames(sc_allen)[ grepl( 'Oligo_', colnames(sc_allen))]
+OPC <- colnames(sc_allen)[ grepl( 'OPC_', colnames(sc_allen))]
+Inh <- colnames(sc_allen)[ grepl( 'Inh_', colnames(sc_allen))]
+Exc <- colnames(sc_allen)[ grepl( 'Exc_', colnames(sc_allen))]
+VLMC <- colnames(sc_allen)[ grepl( 'VLMC_', colnames(sc_allen))]
+Endo <- colnames(sc_allen)[ grepl( 'Endo_', colnames(sc_allen))]
+Peri <- colnames(sc_allen)[ grepl( 'Peri_', colnames(sc_allen))]
+
+cell_type_exp <- as.data.frame(matrix(0, dim(sc_allen)[1], 9))
+row.names(cell_type_exp) <- row.names(sc_allen)
+colnames(cell_type_exp) <- c('Ast', 'Micro', 'Oligo', 'OPC', 
+                             'Inh', 'Exc', 'VLMC', 'Endo', 'Peri')
+
+# - Astocytes
+sc_Ast <- sc_allen[,Ast] %>% filter_at(vars(length(Ast)), any_vars(. >= log2(5)))
+cell_type_exp[row.names(sc_Ast),'Ast'] <- 1
+
+# - Microglia
+sc_Micro <- rownames(sc_allen[sc_allen$Micro_L1.6_C1QC > log2(5),])
+cell_type_exp[sc_Micro,'Micro'] <- 1
+
+# - Oligodendrocytes
+sc_oligo <- sc_allen[,Oligo] %>% filter_at(vars(length(Oligo)), any_vars(. >= log2(5)))
+cell_type_exp[row.names(sc_oligo),'Oligo'] <- 1
+
+# - Oligo Pre-Cursor Cells
+sc_OPC <- rownames(sc_allen[sc_allen$OPC_L1.6_MYT1 > log2(5),])
+cell_type_exp[sc_OPC,'OPC'] <- 1
+
+# - Inh
+sc_Inh <- sc_allen[,Inh] %>% filter_at(vars(length(Inh)), any_vars(. >= log2(5)))
+cell_type_exp[row.names(sc_Inh),'Inh'] <- 1
+
+# - Excitatory
+sc_Exc <- sc_allen[,Exc] %>% filter_at(vars(length(Exc)), any_vars(. >= log2(5)))
+cell_type_exp[row.names(sc_Exc),'Exc'] <- 1
+
+# - VLMC
+sc_VLMC <- rownames(sc_allen[sc_allen$VLMC_L1.3_CYP1B1 > log2(5),])
+cell_type_exp[sc_VLMC,'VLMC'] <- 1
+
+# - Endo
+sc_Endo <- rownames(sc_allen[sc_allen$Endo_L2.5_CLDN5 > log2(5),])
+cell_type_exp[sc_Endo,'Endo'] <- 1
+
+# - Peri
+sc_Peri <- rownames(sc_allen[sc_allen$Peri_L1.6_MUSTN1 > log2(5),])
+cell_type_exp[sc_Peri,'Peri'] <- 1
+
+## Annotate with pathway commons gene names:
+temp_trans <- filt_trans[ filt_trans$Path_commons_name %in% t_keeps[!is.na(t_keeps)], ]
+
+name_trans <- temp_trans[,c('allen_gene_name', 'Path_commons_name')]
+name_trans <- name_trans[!duplicated(name_trans),]
+
+name_trans <- name_trans[ !(name_trans$Path_commons_name %in% 'EEF1AKMT4-ECE2'),]
+name_trans <- name_trans[ !is.na(name_trans$allen_gene_name), ]
+row.names(name_trans) <- name_trans$allen_gene_name
+
+for(i in 1:length(row.names(cell_type_exp))) {
+  if(row.names(cell_type_exp)[i] %in% name_trans$allen_gene_name){
+    if( name_trans[row.names(cell_type_exp)[i],]$allen_gene_name %in% name_trans[row.names(cell_type_exp)[i],]$Path_commons_name  ){
+      
+    }else{
+      if( name_trans[row.names(cell_type_exp)[i],]$Path_commons_name %in% row.names(cell_type_exp) ){
+        
+      }else{
+        row.names(cell_type_exp)[i] <- name_trans[row.names(cell_type_exp)[i],]$Path_commons_name
+      }
+    }
+  }
+}
+#_temp_trans
+missing <- t_keeps[!(t_keeps %in% row.names(cell_type_exp))]
+
+add_ons <- as.data.frame(matrix(-1, length(missing), dim(cell_type_exp)[2] ))
+colnames(add_ons) <- colnames(cell_type_exp)
+row.names(add_ons) <- missing
+
+final_cell_type <- as.data.frame(rbind(cell_type_exp,add_ons))
+
+
+#############################################################################
 #Total_Cor <- Total[ !is.na(Total$Avg_Cortex_CE) ,]
 Genes <- c( as.character(Total_Cor$from), as.character(Total_Cor$to) )
 Genes <- Genes[ !duplicated(Genes) ]
@@ -90,9 +210,22 @@ Total_Cor[ is.na(Total_Cor$Avg_Cortex_CE), ]$Avg_Cortex_CE <-0
 ### Total_Cor[ ( Total_Cor$from %in% 'AXL' | Total_Cor$to %in% 'AXL') & (Total_Cor$from %in% 'SRC' | Total_Cor$to %in% 'SRC'), ] 
 ### Total_Cor[ ( Total_Cor$from %in% 'AXL' | Total_Cor$to %in% 'AXL') & (Total_Cor$from %in% 'FYN' | Total_Cor$to %in% 'FYN'), ] 
 
-#Make iGraph net and cluster
+#Make iGraph net and cluster - Add in vertex - meta data...
 net_undirected <- graph_from_data_frame(d=Total_Cor, vertices=Genes, directed=F)
 net_directed <- graph_from_data_frame(d=Total_Cor, vertices=Genes, directed=T) 
+
+#Annotate verticies with celltype expression
+for( cell_pop in colnames(final_cell_type)) {
+  net_undirected <- set_vertex_attr(net_undirected, 
+                  cell_pop, 
+                  index = V(net_undirected), 
+                  final_cell_type[names(V(net_undirected)),cell_pop])
+  net_directed <- set_vertex_attr(net_directed, 
+                  cell_pop, 
+                  index = V(net_directed), 
+                  final_cell_type[names(V(net_directed)),cell_pop])
+}
+
 
 # Louvain Clustering
 Start <- Sys.time()
@@ -152,17 +285,26 @@ V(net_directed)$community <- Clust_bt$membership
 if( Use_Cor == 'YES' ){
   #Only take edges with Coexpression
   #Save Networks and push to synapse
-  save(net_undirected, file = '~/igraph_Network_Expansion/code/FullNetwork_NoEstimator.RData')
-  save(JS_net_undirected, file = '~/igraph_Network_Expansion/code/FullNetwork_JS_Estimator.RData')
-  save(net_undirected, file = '~/igraph_Network_Expansion/code/DirectedFullNetwork_NoEstimator.RData')
-  save(JS_net_undirected, file = '~/igraph_Network_Expansion/code/DirectedFullNetwork_JS_Estimator.RData')
+  #_# - save(net_undirected, file = '~/igraphNetworkExpansion/code/FullNetwork_NoEstimator.RData')
+  #_# - save(JS_net_undirected, file = '~/igraphNetworkExpansion/code/FullNetwork_JS_Estimator.RData')
+  #_# - save(net_undirected, file = '~/igraphNetworkExpansion/code/DirectedFullNetwork_NoEstimator.RData')
+  #_# - save(JS_net_undirected, file = '~/igraphNetworkExpansion/code/DirectedFullNetwork_JS_Estimator.RData')
+  save(net_undirected, file = '~/FullNetwork_NoEstimator.RData')
+  save(JS_net_undirected, file = '~/FullNetwork_JS_Estimator.RData')
+  save(net_undirected, file = '~/DirectedFullNetwork_NoEstimator.RData')
+  save(JS_net_undirected, file = '~/DirectedFullNetwork_JS_Estimator.RData')
+
 
 }else{
   #Else Only take edges with 2 coretex expressed genes
-  save(net_undirected, file = '~/igraph_Network_Expansion/code/FullNetwork_NoEstimator_Not_CoE_Filt.RData')
-  save(JS_net_undirected, file = '~/igraph_Network_Expansion/code/FullNetwork_JS_Estimator_Not_CoE_Filt.RData')
-  save(net_directed, file = '~/igraph_Network_Expansion/code/DirectedFullNetwork_NoEstimator_Not_CoE_Filt.RData')
-  save(JS_net_directed, file = '~/igraph_Network_Expansion/code/DirectedFullNetwork_JS_Estimator_Not_CoE_Filt.RData')
+  #_# - save(net_undirected, file = '~/igraphNetworkExpansion/code/FullNetwork_NoEstimator_Not_CoE_Filt.RData')
+  #_# - save(JS_net_undirected, file = '~/igraphNetworkExpansion/code/FullNetwork_JS_Estimator_Not_CoE_Filt.RData')
+  #_# - save(net_directed, file = '~/igraphNetworkExpansion/code/DirectedFullNetwork_NoEstimator_Not_CoE_Filt.RData')
+  #_# - save(JS_net_directed, file = '~/igraphNetworkExpansion/code/DirectedFullNetwork_JS_Estimator_Not_CoE_Filt.RData')
+  save(net_undirected, file = '~/FullNetwork_NoEstimator_Not_CoE_Filt.RData')
+  save(JS_net_undirected, file = '~/FullNetwork_JS_Estimator_Not_CoE_Filt.RData')
+  save(net_directed, file = '~/DirectedFullNetwork_NoEstimator_Not_CoE_Filt.RData')
+  save(JS_net_directed, file = '~/DirectedFullNetwork_JS_Estimator_Not_CoE_Filt.RData')
 }
 
 parentId <- 'syn21534582'
@@ -173,7 +315,7 @@ CODE <- syn_temp$store(synapseclient$Folder(name = "igraphData", parentId = pare
 thisFileName <- '02_Build_Networks_Normal_and_JS_Estimator.Rmd'
 
 # Github link
-#TBD_ # thisRepo <- githubr::getRepo(repository = "jgockley62/igraph_Network_Expansion", ref="branch", refName='master')
+#TBD_ # thisRepo <- githubr::getRepo(repository = "jgockley62/igraphNetworkExpansion", ref="branch", refName='master')
 #TBD_ # thisFile <- githubr::getPermlink(repository = thisRepo, repositoryPath=paste0('code/',thisFileName))
 
 #Set Used SynIDs For Provenance
@@ -193,13 +335,13 @@ all.annotations = list(
 
 if( Use_Cor == 'YES' ){
   # Store  executed = thisFile,
-  ENRICH_OBJ <-  syn_temp$store( synapseclient$File( path='~/igraph_Network_Expansion/code/FullNetwork_NoEstimator.RData', name = 'FullNetwork_NoEstimator.RData', parentId=CODE$properties$id ), used = Syns_Used, activityName = activityName, activityDescription = activityDescription)
+  ENRICH_OBJ <-  syn_temp$store( synapseclient$File( path='~/igraphNetworkExpansion/code/FullNetwork_NoEstimator.RData', name = 'FullNetwork_NoEstimator.RData', parentId=CODE$properties$id ), used = Syns_Used, activityName = activityName, activityDescription = activityDescription)
 
-  ENRICH_OBJ <-  syn_temp$store( synapseclient$File( path='~/igraph_Network_Expansion/code/FullNetwork_JS_Estimator.RData', name = 'FullNetwork_JS_Estimator.RData', parentId=CODE$properties$id ), used = Syns_Used, activityName = activityName, activityDescription = activityDescription)
+  ENRICH_OBJ <-  syn_temp$store( synapseclient$File( path='~/igraphNetworkExpansion/code/FullNetwork_JS_Estimator.RData', name = 'FullNetwork_JS_Estimator.RData', parentId=CODE$properties$id ), used = Syns_Used, activityName = activityName, activityDescription = activityDescription)
   
-  ENRICH_OBJ <-  syn_temp$store( synapseclient$File( path='~/igraph_Network_Expansion/code/DirectedFullNetwork_NoEstimator.RData', name = 'DirectedFullNetwork_NoEstimator.RDataFullNetwork_NoEstimator.RData', parentId=CODE$properties$id ), used = Syns_Used, activityName = activityName, activityDescription = activityDescription)
+  ENRICH_OBJ <-  syn_temp$store( synapseclient$File( path='~/igraphNetworkExpansion/code/DirectedFullNetwork_NoEstimator.RData', name = 'DirectedFullNetwork_NoEstimator.RDataFullNetwork_NoEstimator.RData', parentId=CODE$properties$id ), used = Syns_Used, activityName = activityName, activityDescription = activityDescription)
 
-  ENRICH_OBJ <-  syn_temp$store( synapseclient$File( path='~/igraph_Network_Expansion/code/DirectedFullNetwork_JS_Estimator.RData', name = 'DirectedFullNetwork_JS_Estimator.RData', parentId=CODE$properties$id ), used = Syns_Used, activityName = activityName, activityDescription = activityDescription)
+  ENRICH_OBJ <-  syn_temp$store( synapseclient$File( path='~/igraphNetworkExpansion/code/DirectedFullNetwork_JS_Estimator.RData', name = 'DirectedFullNetwork_JS_Estimator.RData', parentId=CODE$properties$id ), used = Syns_Used, activityName = activityName, activityDescription = activityDescription)
 
 
 }else{
