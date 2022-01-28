@@ -335,25 +335,25 @@ all.annotations = list(
 
 if( Use_Cor == 'YES' ){
   # Store  executed = thisFile,
-  ENRICH_OBJ <-  syn_temp$store( synapseclient$File( path='~/igraphNetworkExpansion/code/FullNetwork_NoEstimator.RData', name = 'FullNetwork_NoEstimator.RData', parentId=CODE$properties$id ), used = Syns_Used, activityName = activityName, activityDescription = activityDescription)
+  ENRICH_OBJ <-  syn_temp$store( synapseclient$File( path='~/FullNetwork_NoEstimator.RData', name = 'FullNetwork_NoEstimator.RData', parentId=CODE$properties$id ), used = Syns_Used, activityName = activityName, activityDescription = activityDescription)
 
-  ENRICH_OBJ <-  syn_temp$store( synapseclient$File( path='~/igraphNetworkExpansion/code/FullNetwork_JS_Estimator.RData', name = 'FullNetwork_JS_Estimator.RData', parentId=CODE$properties$id ), used = Syns_Used, activityName = activityName, activityDescription = activityDescription)
+  ENRICH_OBJ <-  syn_temp$store( synapseclient$File( path='~/FullNetwork_JS_Estimator.RData', name = 'FullNetwork_JS_Estimator.RData', parentId=CODE$properties$id ), used = Syns_Used, activityName = activityName, activityDescription = activityDescription)
   
-  ENRICH_OBJ <-  syn_temp$store( synapseclient$File( path='~/igraphNetworkExpansion/code/DirectedFullNetwork_NoEstimator.RData', name = 'DirectedFullNetwork_NoEstimator.RDataFullNetwork_NoEstimator.RData', parentId=CODE$properties$id ), used = Syns_Used, activityName = activityName, activityDescription = activityDescription)
+  ENRICH_OBJ <-  syn_temp$store( synapseclient$File( path='~/DirectedFullNetwork_NoEstimator.RData', name = 'DirectedFullNetwork_NoEstimator.RDataFullNetwork_NoEstimator.RData', parentId=CODE$properties$id ), used = Syns_Used, activityName = activityName, activityDescription = activityDescription)
 
-  ENRICH_OBJ <-  syn_temp$store( synapseclient$File( path='~/igraphNetworkExpansion/code/DirectedFullNetwork_JS_Estimator.RData', name = 'DirectedFullNetwork_JS_Estimator.RData', parentId=CODE$properties$id ), used = Syns_Used, activityName = activityName, activityDescription = activityDescription)
+  ENRICH_OBJ <-  syn_temp$store( synapseclient$File( path='~/DirectedFullNetwork_JS_Estimator.RData', name = 'DirectedFullNetwork_JS_Estimator.RData', parentId=CODE$properties$id ), used = Syns_Used, activityName = activityName, activityDescription = activityDescription)
 
 
 }else{
   # Store  executed = thisFile,
-  ENRICH_OBJ <-  syn_temp$store( synapseclient$File( path='~/igraph_Network_Expansion/code/FullNetwork_NoEstimator_Not_CoE_Filt.RData', name = 'FullNetwork_NoEstimator_Not_CoE_Filt.RData', parentId=CODE$properties$id ), used = Syns_Used, activityName = activityName, activityDescription = activityDescription)
+  ENRICH_OBJ <-  syn_temp$store( synapseclient$File( path='~/FullNetwork_NoEstimator_Not_CoE_Filt.RData', name = 'FullNetwork_NoEstimator_Not_CoE_Filt.RData', parentId=CODE$properties$id ), used = Syns_Used, activityName = activityName, activityDescription = activityDescription)
 
-  ENRICH_OBJ <-  syn_temp$store( synapseclient$File(   path='~/igraph_Network_Expansion/code/FullNetwork_JS_Estimator_Not_CoE_Filt.RData', name = 'FullNetwork_JS_Estimator_Not_CoE_Filt.RData', parentId=CODE$properties$id ), used = Syns_Used, activityName = activityName, activityDescription = activityDescription)
+  ENRICH_OBJ <-  syn_temp$store( synapseclient$File(   path='~/FullNetwork_JS_Estimator_Not_CoE_Filt.RData', name = 'FullNetwork_JS_Estimator_Not_CoE_Filt.RData', parentId=CODE$properties$id ), used = Syns_Used, activityName = activityName, activityDescription = activityDescription)
   
   # Store  executed = thisFile,
-  ENRICH_OBJ <-  syn_temp$store( synapseclient$File( path='~/igraph_Network_Expansion/code/DirectedFullNetwork_NoEstimator_Not_CoE_Filt.RData', name = 'DirectedFullNetwork_NoEstimator_Not_CoE_Filt.RData', parentId=CODE$properties$id ), used = Syns_Used, activityName = activityName, activityDescription = activityDescription)
+  ENRICH_OBJ <-  syn_temp$store( synapseclient$File( path='~/DirectedFullNetwork_NoEstimator_Not_CoE_Filt.RData', name = 'DirectedFullNetwork_NoEstimator_Not_CoE_Filt.RData', parentId=CODE$properties$id ), used = Syns_Used, activityName = activityName, activityDescription = activityDescription)
 
-  ENRICH_OBJ <-  syn_temp$store( synapseclient$File(   path='~/igraph_Network_Expansion/code/DirectedFullNetwork_JS_Estimator_Not_CoE_Filt.RData', name = 'DirectedFullNetwork_JS_Estimator_Not_CoE_Filt.RData', parentId=CODE$properties$id ), used = Syns_Used, activityName = activityName, activityDescription = activityDescription)
+  ENRICH_OBJ <-  syn_temp$store( synapseclient$File(   path='~/DirectedFullNetwork_JS_Estimator_Not_CoE_Filt.RData', name = 'DirectedFullNetwork_JS_Estimator_Not_CoE_Filt.RData', parentId=CODE$properties$id ), used = Syns_Used, activityName = activityName, activityDescription = activityDescription)
 
 }
 
