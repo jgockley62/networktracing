@@ -29,7 +29,7 @@ source('igraphhack/igraphplot2.R')
 ```{r Import}
 setwd('~/igraph_Network_Expansion/')
 
-reticulate::use_python("/usr/bin/python", required = TRUE)
+#reticulate::use_python("/usr/bin/python", required = TRUE)
 synapseclient <- reticulate::import("synapseclient")
 syn_temp <- synapseclient$Synapse()
 syn_temp$login( )
@@ -56,7 +56,7 @@ if( Use_Cor == 'YES' ){
   Total_Cor <- Total[ Total$Avg_Cortex_CE > 0,]
 }else{
   #Retain those with OMICs and scc Weights
-  OMICS <- read.csv(syn_temp$get('syn22758171',version='4')$path)
+  OMICS <- read.csv(syn_temp$get('syn22758171',version='5')$path)
   filt_trans <- gn_trans[ gn_trans$hgnc_symbol %in% OMICS$GName, ]
   
   # 15,362 PC genes in OMICs -  

@@ -16,7 +16,7 @@ if( !is.installed("clusterProfiler") ){
 }
 
 knitr::opts_chunk$set(echo = TRUE)
-setwd('~/igraph_Network_Expansion/')
+setwd('~/igraphNetworkExpansion/')
 library(igraph)
 library(paxtoolsr)
 library(RJSONIO)
@@ -29,13 +29,13 @@ library(doParallel)
 library(RColorBrewer)
 devtools::install_github("jhrcook/HotNetvieweR")
 library(HotNetvieweR)
-source('~/igraph_Network_Expansion/igraphhack/igraphplot2.R')
+source('~/igraphNetworkExpansion/R/igraphplot2.R')
 ```
 
 ## R Import Data
 
 ```{r Import}
-setwd('~/igraph_Network_Expansion/')
+setwd('~/igraphNetworkExpansion/')
 
 reticulate::use_python("/usr/bin/python", required = TRUE)
 synapseclient <- reticulate::import("synapseclient")
@@ -88,42 +88,57 @@ if( Simple == 'YES' ){
 }
 
 if( Filter_Edges == 'YES' ){
-  #Net is: 13,867 Vertacies and 806,950 Edges
+  #Net is: 15659 Vertices and 953,836 Edges
   # A)
-  # loose( 246 vertices ) -- A == 13621 Vertacies and 544871 Edges
+  # loose( 372 vertices ) -- A == 15287 Vertacies and 647862 Edges
   test_net <- igraph::subgraph.edges( net,
                               E(net)[ ( E(net)$EdgeRep == 1  & 
                                         E(net)$Occurance == 1 & 
                                         E(net)$Avg_Cortex_CE == 0 ) == F ],
                               delete.vertices = TRUE
                             )
-  # loose( 3053 vertices ) -- C 10,814 Vertacies and 179,148 Edges
-  test_net <-  igraph::subgraph.edges( test_net,
-                              E(test_net)[ ( E(test_net)$EdgeRep == 1  &
-                                             E(test_net)$Occurance == 2 &
-                                             E(test_net)$Avg_Cortex_CE == 0  ) == F ],
+  
+  # loose( 627 vertices ) -- C 15032 Vertacies and 509,168 Edges
+  test_net <-  igraph::subgraph.edges( net,
+                              igraph::E(net)[ ( igraph::E(net)$EdgeRep = 1  &
+                                             igraph::E(net)$Occurance < 2 &
+                                             igraph::E(net)$Avg_Cortex_CE == 0  ) == F ],
                               delete.vertices = TRUE
                             )
-  #loose ( 424 vertacies )
-  #B 13,443 vertices and 441,227 Edges
-  #test_net <- subgraph.edges( net,
-  #                            E(net)[ ( E(net)$EdgeRep == 1  &
-  #                                      E(net)$Occurance == 2 & 
-  #                                      E(net)$Avg_Cortex_CE == 0  ) == F ],
-  #                            delete.vertices = TRUE
-  #                          )
-  
+
   # E)
-  # loose( 3691 vertices ) -- A == 10176 Vertacies and 151912 Edges
+  # loose( 3691 vertices ) -- A == 10926 Vertacies and 172,852 Edges
   test_net <-  igraph::subgraph.edges( net,
                               E(net)[ ( E(net)$EdgeRep == 1  & 
                                         E(net)$Avg_Cortex_CE == 0 ) == F ],
                               delete.vertices = TRUE
                             )
-  
+  # F)
+  # loose(  vertices ) -- A == 15,287 Vertacies and 647,862 Edges
+  test_net <-  igraph::subgraph.edges( net,
+                              E(net)[ ( E(net)$SumOccurence < 2  & 
+                                        E(net)$Avg_Cortex_CE == 0 ) == F ],
+                              delete.vertices = TRUE
+                            )
+  # G)
+  # loose(  vertices ) -- A == 10887 Vertacies and 142799 Edges
+  test_net <- igraph::subgraph.edges( net,
+                              E(net)[ ( (E(net)$EdgeRep == 1  | 
+                                        E(net)$Occurance == 1) & 
+                                        E(net)$Avg_Cortex_CE == 0 ) == F ],
+                              delete.vertices = TRUE
+                            )
   net <- test_net
- 
-
+  
+  #H) only occurance
+  # loose( 3691 vertices ) -- A == 10,887 Vertacies and 142,799 Edges
+  test_net <-  igraph::subgraph.edges( net,
+                              igraph::E(net)[ ( igraph::E(net)$Occurance < 2  & 
+                                        igraph::E(net)$Avg_Cortex_CE == 0 ) == F ],
+                              delete.vertices = TRUE
+                            )
+  #Use-F
+  net <- test_net
 }
 
 
@@ -132,7 +147,7 @@ if( Filter_Edges == 'YES' ){
 OMICS_dep <- read.csv(syn_temp$get('syn22758171')$path)
 #SELECT * FROM syn23019621 WHERE GeneName in ('DDAH2', 'NAPG') 
 #syn23019621
-OMICS <- read.csv( syn_temp$tableQuery( paste0( 'SELECT * FROM syn24168007 WHERE GeneName in (\'',
+OMICS <- read.csv( syn_temp$tableQuery( paste0( 'SELECT * FROM syn25575156 WHERE GeneName in (\'',
                                               paste( names(V(net)), collapse = '\',\'' ),
                                               '\')'),
                                       resultsAs = 'csv' )$filepath)
@@ -165,9 +180,14 @@ OMICS_alt <- OMICS_alt[ is.na(OMICS_alt$GName)==F,]
 OMICS_alt <- OMICS_alt[ OMICS_alt$ENSG %in% as.character(OMICS_dep$ENSG), ] 
 
 OMICS_alt  <- OMICS_alt[ !duplicated(OMICS_alt$ENSG), ]
+OMICS_alt <- OMICS_alt[ !(OMICS_alt$ENSG == 'ENSG00000232995'),]
 row.names( OMICS_alt ) <- OMICS_alt$GName
 
 OMICS_dep <- OMICS_dep[ is.na(OMICS_dep$GName) == F, ]
+
+keeps <- OMICS_dep[ duplicated(OMICS_dep$GName) & !(OMICS_dep$TYPE == 'None_Sig' ),]$GName
+OMICS_dep <- OMICS_dep[ !(duplicated(OMICS_dep$GName) & (OMICS_dep$TYPE == 'None_Sig') & OMICS_dep$GName %in% keeps ),]
+OMICS_dep <- OMICS_dep[ !duplicated(OMICS_dep$GName),]
 row.names( OMICS_dep ) <- OMICS_dep$GName
 
 OMICS_alt$RNA_TE <- OMICS_dep[ row.names(OMICS_alt), ]$RNA_TE
@@ -175,9 +195,9 @@ OMICS_alt$Pro_TE <- OMICS_dep[ row.names(OMICS_alt), ]$Pro_TE
 
 #vertex_attr(net, "weight", index = V(net)) <- OMICS_alt[ names( V(net)), ]$Final_Weight 
 OMICS_alt[ names( V(net)), ]$Overall[ is.na(OMICS_alt[ names( V(net)), ]$Overall) ] <- 0
-vertex_attr(net, "weight", index = V(net)) <- OMICS_alt[ names( V(net)), ]$Overall
-vertex_attr(net, "RNA_EffectScore", index = V(net)) <- OMICS_alt[ names( V(net)), ]$RNA_TE 
-vertex_attr(net, "Pro_EffectScore", index = V(net)) <- OMICS_alt[ names( V(net)), ]$Pro_TE 
+igraph::vertex_attr(net, "weight", index = igraph::V(net)) <- OMICS_alt[ names( igraph::V(net)), ]$Overall
+igraph::vertex_attr(net, "RNA_EffectScore", index = igraph::V(net)) <- OMICS_alt[ names( igraph::V(net)), ]$RNA_TE 
+igraph::vertex_attr(net, "Pro_EffectScore", index = igraph::V(net)) <- OMICS_alt[ names( igraph::V(net)), ]$Pro_TE 
 
 
 # Zero out the TEs
@@ -192,8 +212,8 @@ OMICS_alt$RNA_TE_Cor <- OMICS_alt$RNA_TE
   #OMICS_alt[ OMICS_alt$Overall == 0, ]$RNA_TE_Cor <- 0
 # Depricate for now
 
-vertex_attr(net, "RNA_Cor_EffectScore", index = V(net)) <- OMICS_alt[ names( V(net)), ]$RNA_TE_Cor
-vertex_attr(net, "Pro_Cor_EffectScore", index = V(net)) <- OMICS_alt[ names( V(net)), ]$PRO_TE_Cor 
+igraph::vertex_attr(net, "RNA_Cor_EffectScore", index = igraph::V(net)) <- OMICS_alt[ names( igraph::V(net)), ]$RNA_TE_Cor
+igraph::vertex_attr(net, "Pro_Cor_EffectScore", index = igraph::V(net)) <- OMICS_alt[ names( igraph::V(net)), ]$PRO_TE_Cor 
 ```
 
 ```{r functions }
