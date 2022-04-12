@@ -1,7 +1,10 @@
 ################################################################################
-# Quick Trial Trace for Jesses kinases
+# Quick Trial Trace for Jesses kinases - 
+## Need to add this to the image!
+## apt-get install libzmq3-dev
 setwd('~/networktracing/code/')
 syns_used <- NULL
+remotes::install_github("jgockley62/igraphNetworkExpansion")
 
 reticulate::use_python("/usr/bin/python3", required = TRUE)
 synapseclient <- reticulate::import("synapseclient")
@@ -84,10 +87,11 @@ if( Filter_Edges == 'YES' ){
   
   # E)
   # loose( 3691 vertices ) -- A == 10176 Vertacies and 151912 Edges
-  test_net <-  igraph::subgraph.edges( net,
-                                       E(net)[ ( E(net)$EdgeRep == 1  & 
-                                                   E(net)$Avg_Cortex_CE == 0 ) == F ],
-                                       delete.vertices = TRUE
+  test_net <-  igraph::subgraph.edges( 
+    net,
+    igraph::E(net)[ ( igraph::E(net)$Occurance == 1  &
+                      igraph::E(net)$Avg_Cortex_CE == 0 ) == F ],
+    delete.vertices = TRUE
   )
   net <- test_net
 }
@@ -96,7 +100,7 @@ syns_used <- c( syns_used, 'syn22758171')
 #Annotate vertices on Omics Weights:
 OMICS_dep <- read.csv(syn_temp$get('syn22758171')$path)
 OMICS <- read.csv( syn_temp$tableQuery( paste0( 'SELECT * FROM syn25575156 WHERE GeneName in (\'',
-                                                paste( names(V(net)), collapse = '\',\'' ),
+                                                paste( names(igraph::V(net)), collapse = '\',\'' ),
                                                 '\')'),
                                         resultsAs = 'csv' )$filepath)
 OMICS <-  OMICS[ , c('ENSG', 'GeneName', 'OmicsScore', 'GeneticsScore', 'Logsdon')]
@@ -129,6 +133,8 @@ OMICS_alt <- OMICS_alt[ is.na(OMICS_alt$GName)==F,]
 OMICS_alt <- OMICS_alt[ OMICS_alt$ENSG %in% as.character(OMICS_dep$ENSG), ] 
 
 OMICS_alt  <- OMICS_alt[ !duplicated(OMICS_alt$ENSG), ]
+OMICS_alt <- OMICS_alt[!duplicated(OMICS_alt$GName),]
+OMICS_alt <- OMICS_alt[ is.na(OMICS_alt$GName) == F, ]
 row.names( OMICS_alt ) <- OMICS_alt$GName
 
 OMICS_dep <- OMICS_dep[ is.na(OMICS_dep$GName) == F, ]
@@ -138,18 +144,18 @@ OMICS_alt$RNA_TE <- OMICS_dep[ row.names(OMICS_alt), ]$RNA_TE
 OMICS_alt$Pro_TE <- OMICS_dep[ row.names(OMICS_alt), ]$Pro_TE
 
 #vertex_attr(net, "weight", index = V(net)) <- OMICS_alt[ names( V(net)), ]$Final_Weight 
-OMICS_alt[ names( V(net)), ]$Overall[ is.na(OMICS_alt[ names( V(net)), ]$Overall) ] <- 0
-vertex_attr(net, "weight", index = V(net)) <- OMICS_alt[ names( V(net)), ]$Overall
-vertex_attr(net, "RNA_EffectScore", index = V(net)) <- OMICS_alt[ names( V(net)), ]$RNA_TE 
-vertex_attr(net, "Pro_EffectScore", index = V(net)) <- OMICS_alt[ names( V(net)), ]$Pro_TE 
+OMICS_alt[ names( igraph::V(net)), ]$Overall[ is.na(OMICS_alt[ names( igraph::V(net)), ]$Overall) ] <- 0
+igraph::vertex_attr(net, "weight", index = igraph::V(net)) <- OMICS_alt[ names( igraph::V(net)), ]$Overall
+igraph::vertex_attr(net, "RNA_EffectScore", index = igraph::V(net)) <- OMICS_alt[ names( igraph::V(net)), ]$RNA_TE 
+igraph::vertex_attr(net, "Pro_EffectScore", index = igraph::V(net)) <- OMICS_alt[ names( igraph::V(net)), ]$Pro_TE 
 
 
 # Zero out the TEs
 OMICS_alt$PRO_TE_Cor <- OMICS_alt$Pro_TE
 OMICS_alt$RNA_TE_Cor <- OMICS_alt$RNA_TE
 
-vertex_attr(net, "RNA_Cor_EffectScore", index = V(net)) <- OMICS_alt[ names( V(net)), ]$RNA_TE_Cor
-vertex_attr(net, "Pro_Cor_EffectScore", index = V(net)) <- OMICS_alt[ names( V(net)), ]$PRO_TE_Cor 
+igraph::vertex_attr(net, "RNA_Cor_EffectScore", index = igraph::V(net)) <- OMICS_alt[ names( igraph::V(net)), ]$RNA_TE_Cor
+igraph::vertex_attr(net, "Pro_Cor_EffectScore", index = igraph::V(net)) <- OMICS_alt[ names( igraph::V(net)), ]$PRO_TE_Cor 
 
 ################################################################################
 ################################################################################
@@ -166,6 +172,108 @@ prov <- githubr::getPermlink(
 
 syns_used <- c( syns_used, 'syn26126932', 'syn26126931' )
 
+
+synapseclient <- reticulate::import("synapseclient")
+syn_temp <- synapseclient$Synapse()
+
+#synapse <- log_into_synapse(usr='',pass = '')
+synap_import <-synapseclient$Synapse()
+synap_import$login()
+syn_temp$login()
+
+##############################################################################
+# Mine the biodomain object
+BioDomains <- readRDS(syn_temp$get('syn27368804')$path)
+leading_edges <- list()
+for(name in names(table(BioDomains$Biodomain))) {
+  leading_edges[[name]] <- 'a'
+}
+
+for( ent in 1:dim(BioDomains)[1] ){
+  if(BioDomains[ent]$padj < 0.05) {
+    leading_edges[[BioDomains[ent]$Biodomain]] <- c(
+      leading_edges[[BioDomains[ent]$Biodomain]],
+      unlist(BioDomains[ent]$leadingEdge)
+    )
+  }
+}
+
+for( name in names(leading_edges) ){
+  leading_edges[[name]] <- leading_edges[[name]][ !(leading_edges[[name]] == 'a') ] 
+}
+### Translate the ENSGs
+trans <- read.csv(syn_temp$get('syn26876894')$path, header = T)
+trans <- trans[ !(trans$Ensembl_ID %in% c('ENSG00000230417', 'ENSG00000254876', 'ENSG00000276085', '')),]
+row.names(trans) <- trans$Ensembl_ID
+
+for( name in names(leading_edges) ){
+  leading_edges[[name]] <- trans[ leading_edges[[name]], ]$Approved_symbol
+}
+for( name in names(leading_edges) ){
+  leading_edges[[name]] <- leading_edges[[name]][!duplicated(leading_edges[[name]])]
+}
+##############################################################################
+#Trace Biodomain leading edges:
+immune_targets <- leading_edges$`Immune Response`[ leading_edges$`Immune Response` %in% names(V(net))]
+trace <- lapply(
+  immune_targets,
+  igraphNetworkExpansion::short_paths,
+  tnet = net,
+  targets = immune_targets,
+  sentinals = immune_targets,
+  cores = 12
+)
+
+targ <- NULL
+sent <- NULL
+for( i in 1:length(trace) ){
+  targ <- c(targ,trace[[i]]$Inter)
+  sent <- c(sent,trace[[i]]$Sentinal)
+}
+
+
+u_targ <- targ[!duplicated(targ)]
+u_sent <- sent[!duplicated(sent)]
+
+# Only genes fount in both target and sentinal traces
+opt_1 <- u_targ[u_targ%in%u_sent]
+
+# All genes present more than twice
+opt_2 <- c(
+  names(table(sent)[table(sent)>1]),
+  names(table(targ)[table(targ)>1])
+)
+opt_2<-opt_2[!duplicated(opt_2)]
+
+# All Genes 
+opt_3 <- c(
+  names(table(sent)),
+  names(table(targ))
+)
+opt_3<-opt_3[!duplicated(opt_3)]
+
+#trace_filt <- igraphNetworkExpansion::trace_filter(trace)
+trace_filt <- opt_3
+
+igraphNetworkExpansion::store_net(
+  network = net,
+  net_filename = 'Immune_Response',
+  net_synname = 'Immune Response Leading Edge Self Trace',
+  p_id = 'syn25190666',
+  folder = 'Jesses Immune Resoponse Run',
+  act_name = 'Jesses Immune Resoponse Subnetwork',
+  act_desc = 'Tracces Leading edge genes of significcant Go-Terms of the Immune Response Biodomain to itself',
+  synap_import = syn_temp,
+  client_import = synapseclient,
+  code = NULL,
+  repo = NULL,
+  syn_used = syns_used,
+  subset = trace_filt,
+  prov_object = prov
+)
+
+
+##############################################################################
 kinases <- igraphNetworkExpansion::list_load(
   'syn26126932',
   network = net,
@@ -241,3 +349,19 @@ net_trace <- igraphNetworkExpansion::network_load(
   synap_import = syn_temp
 )
 
+igraphNetworkExpansion::store_net(
+  network = net,
+  net_filename = 'Base Network',
+  net_synname = 'Base Network',
+  p_id = 'syn25190666',
+  folder = 'Jesses Kinase Runs',
+  act_name = 'Base Network',
+  act_desc = 'Base Network Jesses Kinase and Sentinal List was traced from',
+  synap_import = syn_temp,
+  client_import = synapseclient,
+  code = NULL,
+  repo = NULL,
+  syn_used = syns_used,
+  subset = trace_filt,
+  prov_object = prov
+)
